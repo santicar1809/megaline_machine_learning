@@ -34,6 +34,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.dummy import DummyClassifier
 from sklearn import metrics
+from pprint import pprint
+from scipy.stats import randint
+from sklearn.model_selection import RandomizedSearchCV
 
 # %% [markdown]
 # ## Cargar datos
@@ -111,7 +114,7 @@ print(f'max_depth = {depth} : {result_1}')
 best_depth_2=0
 best_estimator_2=0
 best_score_2=0
-for est in range(1,51,10):
+for est in range(1,51):
     for depth in range(1,10):
         model_2=RandomForestClassifier(random_state=seed,max_depth=depth,n_estimators=est)
         model_2.fit(features_train,target_train)
@@ -179,6 +182,54 @@ print(f'La diferencia es del {(result_final-result_safe_t)*100}%')
 
 # %% [markdown]
 # Al realizar la prueba de cordura, podemos ver que la calidad del modelo es más alta (**78%**) que la del modelo DummyClassifier (**Exactitud: 66%**), por lo cual nuestro modelo pasa la prueba.
+
+# %% [markdown]
+# ### Mejora del modelo con RandomizedCV
+
+# %%
+#Primero revisamos los parametros que se están usando actualmente
+model_to_improve=RandomForestClassifier()
+print('Parameters currently in use:\n')
+pprint(model_to_improve.get_params())
+
+# %%
+#Ahora vamos a pasar la lista de parametros que queremos iterar:
+n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
+# Número de features a considerar para cada separación
+max_features = randint(1, 11)
+# Máximo número de niveles a considerar en el arbol
+max_depth = [int(x) for x in np.linspace(10, 110, num = 11)]
+max_depth.append(None)
+# Número mínimo  de pruebas requeridas para las eparación de un nodo
+min_samples_split = [2, 5, 10]
+# Número minimo de pruebas requeridas para cada nodo hoja
+min_samples_leaf = [1, 2, 4]
+# Metodo de selección de pruebas para el entrenamiento de cada árbol
+bootstrap = [True, False]
+# Creación de la malla aleatoria
+random_grid = {'n_estimators': n_estimators,
+               'max_features': max_features,
+               'max_depth': max_depth,
+               'min_samples_split': min_samples_split,
+               'min_samples_leaf': min_samples_leaf,
+               'bootstrap': bootstrap}
+pprint(random_grid)
+
+# %%
+#Ahora junto con la malla y el RandomizedCV vamos a generar el mejor modelo con los mejores hiperparametros 
+model_random = RandomizedSearchCV(estimator = model_to_improve, param_distributions = random_grid, n_iter = 100, cv = 3, verbose=2, random_state=seed, n_jobs = -1)
+# Entrenamos el modelo
+model_random.fit(features_train,target_train)
+print(model_random.best_params_)
+
+# %%
+best_random = model_random.best_estimator_
+random_prediction = best_random.predict(features_test)
+random_accuracy=metrics.accuracy_score(target_test,random_prediction)
+print("Accuracy:",random_accuracy)
+
+# %% [markdown]
+# Con este método, logramos mejorar la exactitud del modelo a 79%
 
 # %% [markdown]
 # ## Conclusión
