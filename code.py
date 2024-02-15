@@ -32,6 +32,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+from sklearn.dummy import DummyClassifier
 from sklearn import metrics
 
 # %% [markdown]
@@ -151,38 +152,43 @@ target_test=df_test['is_ultra']
 
 # %%
 model_final=RandomForestClassifier(random_state=seed,max_depth=4,n_estimators=11)
-model_final.fit(features,target)
+model_final.fit(features_train,target_train)
 prediction_test=model_final.predict(features_test)
 result_final=metrics.accuracy_score(target_test,prediction_test)
 print(f'El resultado final tiene una exactitud de {result_final*100}%.')
 
+# %%
+print(metrics.classification_report(target_test, prediction_test))
+
 # %% [markdown]
-# Al evaluar el modelo obtenemos una exactitud del 77,7%, mayor a lo esperado que era 75%, por lo cual podemos concluír que el algoritmo es adecuado para la predicción del dataset de prueba.
+# Al evaluar el modelo obtenemos una exactitud del 78,53%, mayor a lo esperado que era 75%, por lo cual podemos concluír que el algoritmo es adecuado para la predicción del dataset de prueba.
+# 
+# Adicionalmente al ver las otras métricas nuestra precisión es buena para ambos datasets, sin embargo, al estar nuestros datos desbalanceados, el recall de la clase 1 es mas baja.
 
 # %% [markdown]
 # ### Prueba de cordura
 
 # %%
-print(metrics.classification_report(target_test, prediction_test))
-
-# %%
-#Porcentaje de 0 correctos: 0.77
-#Porcentaje de 1 correctos: 0.79
-#exactitud= 0.5*(Porcentaje de 0 correctos)+0.5*(Porcentaje de 1 correctos)
-print('La calidad del modelo es de: ',(0.5*0.77)+(0.5*0.79))
+#Para hacer la prueba de cordura, vamos a comprar el modelo escogido con el modelo DummyClassifier 
+model_safe_test=DummyClassifier(random_state=seed)
+model_safe_test.fit(features_train,target_train)
+prediction_safe_t=model_safe_test.predict(features_test)
+result_safe_t=metrics.accuracy_score(target_test,prediction_safe_t)
+print(f'El resultado final tiene una exactitud de {result_safe_t*100}%.')
+print(f'La diferencia es del {(result_final-result_safe_t)*100}%')
 
 # %% [markdown]
-# Al realizar la prueba de cordura, podemos ver que la calidad del modelo es alta, **0.78**.
+# Al realizar la prueba de cordura, podemos ver que la calidad del modelo es más alta (**78%**) que la del modelo DummyClassifier (**Exactitud: 66%**), por lo cual nuestro modelo pasa la prueba.
 
 # %% [markdown]
 # ## Conclusión
 # 
-# El mejor modelo de clasificación es el **Bosque Aleatorio** con un **82%** de exactitud con el dataset de validación y **77%** con el modelo de prueba.
+# El mejor modelo de clasificación es el **Bosque Aleatorio** con un **82%** de exactitud con el dataset de validación y **78%** con el modelo de prueba.
 # 
-# Si análizamos la exactitud del modelo, podemos ver que el modelo adivinó el 79% de los usuarios con plan Ultra y el 77% de los usuarios con plan Smart.
+# Si análizamos la exactitud del modelo, podemos ver que el modelo adivinó el 81% de los usuarios con plan Ultra y el 78% de los usuarios con plan Smart.
 # 
-# Además, tenemos un recall de 94% de los de plan ultra y 46% de plan smart, lo que significa que predijo más cantidad de personas con el plan ultra y menos con el plan smart, por lo que tenemos una oportunidad de mejora frente a esto.
+# Además, tenemos un recall de 95% de los de plan ultra y 47% de plan smart, lo que significa que predijo más cantidad de personas con el plan ultra y menos con el plan smart, por lo que tenemos una oportunidad de mejora frente a esto.
 # 
-# Finalmente al hacer la prueba de cordura, tenemos un 0.78 de calidad del modelo, lo que nos indica que tenemos un buen modelo.
+# Finalmente al hacer la prueba de cordura, nuestro modelo pasa la prueba con una diferencia del 12% por encima, lo que indica que nuestro modelo es bueno.
 
 
